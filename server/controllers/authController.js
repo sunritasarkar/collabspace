@@ -7,7 +7,7 @@ const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // check if user already exists
+    // check existing user
     const userExists = await User.findOne({ email });
 
     if (userExists) {
@@ -18,7 +18,6 @@ const registerUser = async (req, res) => {
 
     // hash password
     const salt = await bcrypt.genSalt(10);
-
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // create user
@@ -30,29 +29,21 @@ const registerUser = async (req, res) => {
 
     // generate token
     const token = jwt.sign(
-      {
-        id: user._id,
-      },
-      "secretkey",
-      {
-        expiresIn: "7d",
-      }
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
     );
 
     res.status(201).json({
-      message: "User registered successfully",
+      _id: user._id,
+      name: user.name,
+      email: user.email,
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
     });
-  } catch (error) {
-    console.error(error);
 
+  } catch (error) {
     res.status(500).json({
-      message: "Server Error",
+      message: error.message,
     });
   }
 };
@@ -62,7 +53,7 @@ const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // check user
+    // find user
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -72,7 +63,10 @@ const loginUser = async (req, res) => {
     }
 
     // compare passwords
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password
+    );
 
     if (!isMatch) {
       return res.status(400).json({
@@ -82,29 +76,21 @@ const loginUser = async (req, res) => {
 
     // generate token
     const token = jwt.sign(
-      {
-        id: user._id,
-      },
-      "secretkey",
-      {
-        expiresIn: "7d",
-      }
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
     );
 
     res.status(200).json({
-      message: "Login successful",
+      _id: user._id,
+      name: user.name,
+      email: user.email,
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
     });
-  } catch (error) {
-    console.error(error);
 
+  } catch (error) {
     res.status(500).json({
-      message: "Server Error",
+      message: error.message,
     });
   }
 };
